@@ -396,7 +396,7 @@ func buildInstallList(name, armoryPK string, forceInstallation bool, pendingPack
 
 		if !packageEntry.Pkg.IsAlias {
 			dependencies := make(map[string]*pkgCacheEntry)
-			err = resolveExtensionPackageDependencies(packageEntry, dependencies, pendingPackages)
+			err = resolveExtensionPackageDependencies(packageEntry, armoryPK, dependencies, pendingPackages)
 			if err != nil {
 				return nil, err
 			}
@@ -512,7 +512,7 @@ func installAliasPackage(entry *pkgCacheEntry, promptToOverwrite bool, clientCon
 
 const maxDepDepth = 10 // Arbitrary recursive limit for dependencies
 
-func resolveExtensionPackageDependencies(pkg *pkgCacheEntry, deps map[string]*pkgCacheEntry, pendingPackages map[string]string) error {
+func resolveExtensionPackageDependencies(pkg *pkgCacheEntry, armoryPK string, deps map[string]*pkgCacheEntry, pendingPackages map[string]string) error {
 	for _, multiExt := range pkg.Extension.ExtCommand {
 		if multiExt.DependsOn == "" {
 			continue // Avoid adding empty dependency
@@ -534,12 +534,12 @@ func resolveExtensionPackageDependencies(pkg *pkgCacheEntry, deps map[string]*pk
 			continue
 		}
 		// Figure out what package we need for the dependency
-		dependencyEntry, err := getPackageForCommand(multiExt.DependsOn, "", "")
+		dependencyEntry, err := getPackageForCommand(multiExt.DependsOn, armoryPK, "")
 		if err != nil {
 			return fmt.Errorf("could not resolve dependency %s for %s: %s", multiExt.DependsOn, pkg.Extension.Name, err)
 		}
 		deps[multiExt.DependsOn] = dependencyEntry
-		err = resolveExtensionPackageDependencies(dependencyEntry, deps, pendingPackages)
+		err = resolveExtensionPackageDependencies(dependencyEntry, armoryPK, deps, pendingPackages)
 		if err != nil {
 			return err
 		}
